@@ -64,8 +64,24 @@ java -jar target/jclouds-gce-example-0.1-SNAPSHOT-jar-with-dependencies.jar --he
 java -jar target/jclouds-gce-example-0.1-SNAPSHOT-jar-with-dependencies.jar --account <your_account_id>@developer.gserviceaccount.com --pk <your_key>.pem listnodes
 ```
 
+### Adding node ###
+
+Node ID will be generated, as I didn't have the time to discover how to define it programatically.
+
+```
+java -jar target/jclouds-gce-example-0.1-SNAPSHOT-jar-with-dependencies.jar --account <your_account_id>@developer.gserviceaccount.com --pk <your_key>.pem add default
+```
+
+### Destroying node ###
+
+Node ID is a composite-key that's represented as <zone_id>/<node_name>. One example is _europe-west1-a/instance-1_.
+
+```
+java -jar target/jclouds-gce-example-0.1-SNAPSHOT-jar-with-dependencies.jar --account <your_account_id>@developer.gserviceaccount.com --pk <your_key>.pem destroy default zoneid/nodeid
+```
+
 ### Listing images ###
 
 ```
-java -jar target/jclouds-gce-example-0.1-SNAPSHOT-jar-with-dependencies.jar --account <your_account_id>@developer.gserviceaccount.com --pk <your_key>.pem add default mynode1
+java -jar target/jclouds-gce-example-0.1-SNAPSHOT-jar-with-dependencies.jar --account <your_account_id>@developer.gserviceaccount.com --pk <your_key>.pem listimages
 ```
