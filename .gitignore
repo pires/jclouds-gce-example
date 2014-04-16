@@ -1,0 +1,18 @@
+*.class
+target
+bin
+log
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Eclipse files #
+.settings
+.project
+.classpath
+
+# private stuff #
+*.p12
+*.pem
