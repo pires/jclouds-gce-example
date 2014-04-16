@@ -56,12 +56,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This application demonstrates the use of the jclouds-gce by creating TODO
- * something Usage is: java MainApp accesskeyid secretkey command name where
- * command in create destroy
+ * This application demonstrates the use of the jclouds-labs-google to manage
+ * nodes on a GCE environment.
  */
 public class App {
 
+  // possible actions
   public static enum Action {
 
     ADD,
@@ -70,7 +70,6 @@ public class App {
     DESTROY,
     LISTNODES,
     LISTIMAGES;
-
   }
 
   private static final Logger log = LoggerFactory
@@ -146,15 +145,14 @@ public class App {
         case ADD:
           log.info(">> adding node to group {}", groupName);
 
-          // Default template chooses the smallest size on an operating system
-          // that tested to work with java, which tends to be Ubuntu or CentOS
+          // Build Debian image in europe-west1-a zone
           TemplateBuilder templateBuilder = compute.templateBuilder();
           templateBuilder.fromImage(compute
               .getImage("debian-7-wheezy-v20140408"));
           templateBuilder.locationId("europe-west1-a");
           templateBuilder.fastest();
 
-          // note this will create a user with the same name as you on the
+          // this will create a user with the same name as you on the
           // node. ex. you can connect via ssh publicip
           Statement bootInstructions = AdminAccess.standard();
           templateBuilder.options(runScript(bootInstructions));
@@ -173,13 +171,9 @@ public class App {
           // run it as root, supply or own credentials vs from cache, and wrap
           // in an init script vs directly invoke
           Map<? extends NodeMetadata, ExecResponse> responses = compute
-              .runScriptOnNodesMatching(//
-                  inGroup(groupName), // predicate used to select nodes
-                  exec(command), // what you actually intend to run
-                  overrideLoginCredentials(login) // use my local user &
-                      // ssh key
-                      .runAsRoot(false) // don't attempt to run as root (sudo)
-                      .wrapInInitScript(false));// run command directly
+              .runScriptOnNodesMatching(inGroup(groupName), exec(command),
+                  overrideLoginCredentials(login).runAsRoot(false)
+                      .wrapInInitScript(false));
 
           for (Entry<? extends NodeMetadata, ExecResponse> response : responses
               .entrySet()) {
@@ -198,20 +192,13 @@ public class App {
               login.identity);
 
           // when running a sequence of commands, you probably want to have
-          // jclouds use the default behavior,
-          // which is to fork a background process.
+          // jclouds use the default behavior, which is to fork a background
+          // process.
           responses = compute.runScriptOnNodesMatching(
-          //
-              inGroup(groupName), Files.toString(file, Charsets.UTF_8), // passing
-              // in a
-              // string
-              // with
-              // the contents of the file
+              inGroup(groupName),
+              Files.toString(file, Charsets.UTF_8),
               overrideLoginCredentials(login).runAsRoot(false).nameTask(
-                  "_" + file.getName().replaceAll("\\..*", ""))); // ensuring
-          // task name
-          // isn't
-          // the same as the file so status checking works properly
+                  "_" + file.getName().replaceAll("\\..*", "")));
 
           for (Entry<? extends NodeMetadata, ExecResponse> response : responses
               .entrySet()) {
