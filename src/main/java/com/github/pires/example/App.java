@@ -13,8 +13,11 @@
 package com.github.pires.example;
 
 import com.google.common.base.Charsets;
+import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Strings.emptyToNull;
 import com.google.common.collect.ImmutableSet;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.getOnlyElement;
@@ -41,6 +44,7 @@ import static org.jclouds.compute.options.TemplateOptions.Builder.overrideLoginC
 import static org.jclouds.compute.options.TemplateOptions.Builder.runScript;
 import static org.jclouds.compute.predicates.NodePredicates.TERMINATED;
 import static org.jclouds.compute.predicates.NodePredicates.inGroup;
+import static org.jclouds.compute.predicates.NodePredicates.locationId;
 import static org.jclouds.compute.predicates.NodePredicates.withIds;
 import org.jclouds.domain.LoginCredentials;
 import org.jclouds.enterprise.config.EnterpriseConfigurationModule;
@@ -229,13 +233,25 @@ public class App {
           break;
 
         case LISTNODES:
-          Set<? extends ComputeMetadata> nodes = compute.listNodes();
-          log.info(">> No of nodes/instances {}", nodes.size());
-          for (ComputeMetadata nodeData : nodes) {
+          Set<? extends ComputeMetadata> nodes1 = compute.listNodes();
+          log.info(">> No of unfiltered nodes/instances {}", nodes1.size());
+          for (ComputeMetadata nodeData : nodes1) {
             log.info(">>>> {}", (NodeMetadata) nodeData);
           }
 
-          //
+          final String region = "europe-west1-a";
+          final String group = "instance";
+          final String tagKey = "type";
+          final String tagValue = "hz-nodes";
+          Predicate filter = Predicates.<NodeMetadata> and(locationId(region),
+              inGroup(group), hasTagKeyWithTagValue(tagKey, tagValue));
+          Set<? extends ComputeMetadata> nodes2 = compute
+              .listNodesDetailsMatching(filter);
+          log.info(">> No of filtered nodes/instances {}", nodes2.size());
+          for (ComputeMetadata nodeData : nodes2) {
+            log.info("-----> {}", (NodeMetadata) nodeData);
+          }
+
           break;
         }
       } catch (RunNodesException e) {
@@ -253,6 +269,31 @@ public class App {
       }
     }
 
+  }
+
+  /**
+   * Builds predicate for filtering query to provider based on user-metadata.
+   * 
+   * @param tagKey
+   * @param tagValue
+   * @return the built predicate.
+   */
+  private static Predicate<NodeMetadata> hasTagKeyWithTagValue(
+      final String tagKey, final String tagValue) {
+    checkNotNull(emptyToNull(tagKey), "tag key must be defined");
+    checkNotNull(emptyToNull(tagValue), "tag value must be defined");
+    return new Predicate<NodeMetadata>() {
+      @Override
+      public boolean apply(NodeMetadata nodeMetadata) {
+        return nodeMetadata.getUserMetadata().containsKey(tagKey)
+            && nodeMetadata.getUserMetadata().get(tagKey).equals(tagValue);
+      }
+
+      @Override
+      public String toString() {
+        return "hasTagKeyWithTagValue(" + tagKey + ", " + tagValue + ")";
+      }
+    };
   }
 
   /**
